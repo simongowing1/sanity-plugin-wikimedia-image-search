@@ -12,7 +12,7 @@ import {
   Text,
   TextInput,
 } from '@sanity/ui';
-import { FormEvent, RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import { type ChangeEvent, RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import type { AssetFromSource, AssetSourceComponentProps } from 'sanity';
 
 import { getFileDetails, searchWikimedia } from '../api/wikimedia';
@@ -65,7 +65,7 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
   );
 
   const handleSubmit = useCallback(
-    (e: FormEvent) => {
+    (e: {preventDefault(): void}) => {
       e.preventDefault();
       setResults([]);
       setSelected(new Set());
@@ -190,7 +190,7 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
                   icon={SearchIcon}
                   placeholder="Search Wikimedia Commons..."
                   value={query}
-                  onChange={(e: FormEvent<HTMLInputElement>) =>
+                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
                     setQuery(e.currentTarget.value)
                   }
                 />
