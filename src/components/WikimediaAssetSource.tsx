@@ -159,6 +159,7 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
         ]);
       } catch (err) {
         console.error('Double-click insert error:', err);
+      } finally {
         setIsInserting(false);
       }
     },
