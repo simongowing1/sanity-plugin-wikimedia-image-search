@@ -1,0 +1,43 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+# Coverage
+coverage
+.nyc_output
+
+# Dependency directories
+node_modules
+jspm_packages
+
+# Optional npm cache
+.npm
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode
+.idea
+*.iml
+
+# Cache
+.cache
+
+# Yalc
+.yalc
+yalc.lock
+
+# npm package zips
+*.tgz
+
+# Compiled plugin
+dist
+
+claude.md
