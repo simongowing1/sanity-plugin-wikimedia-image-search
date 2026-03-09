@@ -1,4 +1,4 @@
-import {SearchIcon} from '@sanity/icons';
+import { SearchIcon } from '@sanity/icons';
 import {
   Box,
   Button,
@@ -12,16 +12,16 @@ import {
   Text,
   TextInput,
 } from '@sanity/ui';
-import {FormEvent, useCallback, useEffect, useRef, useState} from 'react';
-import type {AssetFromSource, AssetSourceComponentProps} from 'sanity';
+import { FormEvent, RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import type { AssetFromSource, AssetSourceComponentProps } from 'sanity';
 
-import {getFileDetails, searchWikimedia} from '../api/wikimedia';
-import type {WikimediaSearchResult} from '../types';
+import { getFileDetails, searchWikimedia } from '../api/wikimedia';
+import type { WikimediaSearchResult } from '../types';
 
 const RESULTS_PER_PAGE = 40;
 
 export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
-  const {onSelect, onClose, selectionType} = props;
+  const { onSelect, onClose, selectionType } = props;
   const isMulti = (selectionType as string) !== 'single';
 
   const [query, setQuery] = useState('');
@@ -33,6 +33,7 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
   const [hasSearched, setHasSearched] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchIdRef: RefObject<number> = useRef(0);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -41,18 +42,23 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
   const doSearch = useCallback(
     async (searchQuery: string, pageNum: number) => {
       if (!searchQuery.trim()) return;
+      const currentSearchId = ++searchIdRef.current;
       setIsSearching(true);
       try {
         const offset = pageNum * RESULTS_PER_PAGE;
         const data = await searchWikimedia(searchQuery, RESULTS_PER_PAGE, offset);
+        if (searchIdRef.current !== currentSearchId) return;
         const fileResults = data.pages.filter((p) => p.title.startsWith('File:') && p.thumbnail);
         setResults(pageNum === 0 ? fileResults : (prev) => [...prev, ...fileResults]);
         setHasMore(data.pages.length === RESULTS_PER_PAGE);
         setHasSearched(true);
       } catch (err) {
+        if (searchIdRef.current !== currentSearchId) return;
         console.error('Wikimedia search error:', err);
       } finally {
-        setIsSearching(false);
+        if (searchIdRef.current === currentSearchId) {
+          setIsSearching(false);
+        }
       }
     },
     [],
@@ -231,7 +237,7 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
                       onClick={() => handleToggleSelect(result)}
                       onDoubleClick={() => handleDoubleClick(result)}
                     >
-                      <Box style={{position: 'relative', paddingBottom: '100%'}}>
+                      <Box style={{ position: 'relative', paddingBottom: '100%' }}>
                         {result.thumbnail && (
                           <img
                             src={`https:${result.thumbnail.url}`}
