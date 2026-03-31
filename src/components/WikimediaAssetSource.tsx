@@ -15,7 +15,7 @@ import {
 import { type ChangeEvent, RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import type { AssetFromSource, AssetSourceComponentProps } from 'sanity';
 
-import { getFileDetails, searchWikimedia } from '../api/wikimedia';
+import { getFileDetails, resizeThumbnailUrl, searchWikimedia } from '../api/wikimedia';
 import type { WikimediaSearchResult } from '../types';
 
 const RESULTS_PER_PAGE = 40;
@@ -65,7 +65,7 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
   );
 
   const handleSubmit = useCallback(
-    (e: {preventDefault(): void}) => {
+    (e: { preventDefault(): void }) => {
       e.preventDefault();
       setResults([]);
       setSelected(new Set());
@@ -240,7 +240,7 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
                       <Box style={{ position: 'relative', paddingBottom: '100%' }}>
                         {result.thumbnail && (
                           <img
-                            src={`https:${result.thumbnail.url}`}
+                            src={resizeThumbnailUrl(result.thumbnail.url, 200)}
                             alt={result.description || result.title}
                             loading="lazy"
                             style={{

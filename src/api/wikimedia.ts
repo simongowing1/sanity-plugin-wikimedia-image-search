@@ -1,6 +1,11 @@
 import type {WikimediaFileResponse, WikimediaSearchResponse} from '../types';
 
 const BASE_URL = 'https://commons.wikimedia.org/w/rest.php/v1';
+
+export function resizeThumbnailUrl(url: string, width: number): string {
+  const absolute = url.startsWith('//') ? `https:${url}` : url;
+  return absolute.replace(/\/\d+px-/, `/${width}px-`);
+}
 const HEADERS = {
   'User-Agent':
     'sanity-plugin-wikimedia-image-search/1.0 (https://github.com/simongowing1/sanity-plugin-wikimedia-image-search)',
