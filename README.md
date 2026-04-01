@@ -1,6 +1,6 @@
 # sanity-plugin-wikimedia-image-search
 
-> This is a **Sanity Studio v3** plugin.
+> This is a **Sanity Studio v5** plugin.
 
 Search [Wikimedia Commons](https://commons.wikimedia.org/) for freely-licensed images and insert them directly into your Sanity Studio.
 
@@ -90,8 +90,8 @@ You can use this metadata to display proper attribution on your site.
 
 ## Requirements
 
-- Sanity Studio v3
-- React 18+
+- Sanity Studio v5
+- React 19.2+
 
 ## Develop & test
 
@@ -111,6 +111,14 @@ npm run format   # Format with Prettier
 ## License
 
 [MIT](LICENSE) © Simon Gowing
+
+## License & Content Rights
+
+- The plugin source code in this repository is licensed under [MIT](LICENSE).
+- Images imported from Wikimedia Commons are **not** covered by this MIT license.
+- Each imported asset keeps its own upstream license terms (for example, CC BY, CC BY-SA, Public Domain), which are shown on the file description page.
+- You are responsible for complying with the license terms of each imported image, including attribution and share-alike requirements where applicable.
+- The plugin stores attribution metadata (`source`, `creditLine`, and `description`) to help you render proper credit in your project.
 
 
 ## Develop & test
