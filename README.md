@@ -23,13 +23,13 @@ Add the plugin to your Sanity configuration:
 
 ```ts
 // sanity.config.ts
-import {defineConfig} from 'sanity'
-import {wikimediaImageSearch} from 'sanity-plugin-wikimedia-image-search'
+import {defineConfig} from 'sanity';
+import {wikimediaImageSearch} from 'sanity-plugin-wikimedia-image-search';
 
 export default defineConfig({
   // ...
   plugins: [wikimediaImageSearch()],
-})
+});
 ```
 
 The plugin registers as an **image asset source**. When you open any image field, you'll see "Wikimedia Commons" as an option in the asset source dropdown.
@@ -39,8 +39,8 @@ The plugin registers as an **image asset source**. When you open any image field
 To replace the default upload option entirely:
 
 ```ts
-import {defineConfig} from 'sanity'
-import {wikimediaAssetSource} from 'sanity-plugin-wikimedia-image-search'
+import {defineConfig} from 'sanity';
+import {wikimediaAssetSource} from 'sanity-plugin-wikimedia-image-search';
 
 export default defineConfig({
   // ...
@@ -50,7 +50,7 @@ export default defineConfig({
       directUploads: false,
     },
   },
-})
+});
 ```
 
 ### Use on a single field
@@ -71,7 +71,7 @@ import {wikimediaAssetSource} from 'sanity-plugin-wikimedia-image-search'
 ## How It Works
 
 1. Open an image field and select **Wikimedia Commons** from the asset source dropdown
-2. Search by keyword — results come from the [Wikimedia Commons REST API](https://www.mediawiki.org/wiki/API:REST_API)
+2. Search by keyword — results come from the Wikimedia Commons MediaWiki API (`action=query` with `generator=search`)
 3. Browse paginated thumbnails and select images
 4. Selected images are downloaded from Wikimedia and uploaded to your Sanity dataset
 5. Attribution is stored on the asset document (`creditLine`, `source`, `description`)
@@ -108,9 +108,27 @@ npm run lint     # Lint the codebase
 npm run format   # Format with Prettier
 ```
 
-## License
+## Release
 
-[MIT](LICENSE) © Simon Gowing
+This repo uses semantic-release in the `CI & Release` workflow.
+
+### Commit types and version bumps
+
+Release behavior follows `@semantic-release/commit-analyzer` default rules:
+
+- `feat:` => **minor** release
+- `fix:` => **patch** release
+- `perf:` => **patch** release
+- `BREAKING CHANGE:` footer => **major** release
+- `chore:`, `docs:`, `style:`, `test:`, and other unmatched commit types => **no release**
+
+Reference: [semantic-release/commit-analyzer](https://github.com/semantic-release/commit-analyzer)
+
+### Triggering a release
+
+Run the [CI & Release workflow](https://github.com/simongowing1/sanity-plugin-wikimedia-image-search/actions/workflows/main.yml) on `main` with **Release new version** enabled.
+
+If there are no releasable commits since the latest tag, semantic-release will skip publishing.
 
 ## License & Content Rights
 
@@ -120,18 +138,4 @@ npm run format   # Format with Prettier
 - You are responsible for complying with the license terms of each imported image, including attribution and share-alike requirements where applicable.
 - The plugin stores attribution metadata (`source`, `creditLine`, and `description`) to help you render proper credit in your project.
 
-
-## Develop & test
-
-This plugin uses [@sanity/plugin-kit](https://github.com/sanity-io/plugin-kit)
-with default configuration for build & watch scripts.
-
-See [Testing a plugin in Sanity Studio](https://github.com/sanity-io/plugin-kit#testing-a-plugin-in-sanity-studio)
-on how to run this plugin with hotreload in the studio.
-
-### Release new version
-
-Run ["CI & Release" workflow](https://github.com/simongowing1/sanity-plugin-wikimedia-image-search/actions/workflows/main.yml).
-Make sure to select the main branch and check "Release new version".
-
-Semantic release will only release on configured branches, so it is safe to run release on any branch.
+[MIT](LICENSE) © Simon Gowing
