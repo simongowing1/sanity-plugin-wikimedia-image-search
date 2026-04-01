@@ -1,5 +1,5 @@
 import {searchWikimedia, getFileDetails} from '../api/wikimedia';
-import type {WikimediaSearchResponse, WikimediaFileResponse} from '../types';
+import type {WikimediaActionResponse, WikimediaFileResponse} from '../types';
 
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
@@ -18,54 +18,121 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 describe('searchWikimedia', () => {
-  const fakeResponse: WikimediaSearchResponse = {
-    pages: [
-      {
-        id: 1,
-        key: 'File:Cat.jpg',
-        title: 'File:Cat.jpg',
-        description: 'A cat',
-        thumbnail: {mimetype: 'image/jpeg', width: 200, height: 150, url: '//example.com/cat.jpg'},
+  const fakeApiResponse: WikimediaActionResponse = {
+    continue: {gsroffset: 40},
+    query: {
+      pages: {
+        '100': {
+          pageid: 100,
+          title: 'File:Cat.jpg',
+          imageinfo: [
+            {
+              url: 'https://upload.wikimedia.org/cat_full.jpg',
+              thumburl: 'https://upload.wikimedia.org/cat_320.jpg',
+              thumbwidth: 320,
+              thumbheight: 240,
+              mime: 'image/jpeg',
+              width: 3000,
+              height: 2000,
+            },
+          ],
+        },
       },
-    ],
+    },
   };
 
-  it('sends correct query params and User-Agent header', async () => {
-    mockFetch.mockResolvedValueOnce(jsonResponse(fakeResponse));
+  it('calls the Action API with correct params', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse(fakeApiResponse));
 
     await searchWikimedia('flamingo', 10, 0);
 
     const [url, options] = mockFetch.mock.calls[0];
-    expect(url).toContain('/search/page?');
-    expect(url).toContain('q=flamingo');
-    expect(url).toContain('limit=10');
-    expect(url).not.toContain('offset');
-    expect(options.headers['User-Agent']).toContain('sanity-plugin-wikimedia-image-search');
+    expect(url).toContain('api.php?');
+    expect(url).toContain('action=query');
+    expect(url).toContain('generator=search');
+    expect(url).toContain('gsrsearch=flamingo');
+    expect(url).toContain('gsrnamespace=6');
+    expect(url).toContain('gsrlimit=10');
+    expect(url).not.toContain('gsroffset');
+    expect(options.headers['Api-User-Agent']).toContain('sanity-plugin-wikimedia-image-search');
   });
 
-  it('includes offset param when offset > 0', async () => {
-    mockFetch.mockResolvedValueOnce(jsonResponse(fakeResponse));
+  it('includes gsroffset when offset > 0', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse(fakeApiResponse));
 
     await searchWikimedia('bird', 40, 80);
 
     const [url] = mockFetch.mock.calls[0];
-    expect(url).toContain('offset=80');
+    expect(url).toContain('gsroffset=80');
   });
 
-  it('does not include offset when offset is 0', async () => {
-    mockFetch.mockResolvedValueOnce(jsonResponse(fakeResponse));
+  it('does not include gsroffset when offset is 0', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse(fakeApiResponse));
 
     await searchWikimedia('bird', 40, 0);
 
     const [url] = mockFetch.mock.calls[0];
-    expect(url).not.toContain('offset');
+    expect(url).not.toContain('gsroffset');
   });
 
-  it('returns parsed JSON on success', async () => {
-    mockFetch.mockResolvedValueOnce(jsonResponse(fakeResponse));
+  it('returns normalized results with nextOffset', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse(fakeApiResponse));
 
     const result = await searchWikimedia('cat');
-    expect(result).toEqual(fakeResponse);
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0].pageid).toBe(100);
+    expect(result.results[0].title).toBe('File:Cat.jpg');
+    expect(result.results[0].thumburl).toBe('https://upload.wikimedia.org/cat_320.jpg');
+    expect(result.results[0].mime).toBe('image/jpeg');
+    expect(result.nextOffset).toBe(40);
+  });
+
+  it('returns nextOffset=null when no continue', async () => {
+    const noContinue: WikimediaActionResponse = {
+      query: fakeApiResponse.query,
+    };
+    mockFetch.mockResolvedValueOnce(jsonResponse(noContinue));
+
+    const result = await searchWikimedia('cat');
+    expect(result.nextOffset).toBeNull();
+  });
+
+  it('filters out non-image mimetypes', async () => {
+    const mixed: WikimediaActionResponse = {
+      query: {
+        pages: {
+          '1': {
+            pageid: 1,
+            title: 'File:Photo.jpg',
+            imageinfo: [{url: '', thumburl: '', thumbwidth: 320, thumbheight: 240, mime: 'image/jpeg', width: 100, height: 100}],
+          },
+          '2': {
+            pageid: 2,
+            title: 'File:Doc.pdf',
+            imageinfo: [{url: '', thumburl: '', thumbwidth: 320, thumbheight: 240, mime: 'application/pdf', width: 100, height: 100}],
+          },
+          '3': {
+            pageid: 3,
+            title: 'File:Audio.ogg',
+            imageinfo: [{url: '', thumburl: '', thumbwidth: 0, thumbheight: 0, mime: 'audio/ogg', width: 0, height: 0}],
+          },
+        },
+      },
+    };
+    mockFetch.mockResolvedValueOnce(jsonResponse(mixed));
+
+    const result = await searchWikimedia('test');
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0].title).toBe('File:Photo.jpg');
+  });
+
+  it('handles empty query response', async () => {
+    const empty: WikimediaActionResponse = {};
+    mockFetch.mockResolvedValueOnce(jsonResponse(empty));
+
+    const result = await searchWikimedia('noresults');
+    expect(result.results).toHaveLength(0);
+    expect(result.nextOffset).toBeNull();
   });
 
   it('throws on non-OK response', async () => {

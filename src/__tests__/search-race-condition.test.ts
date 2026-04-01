@@ -1,5 +1,5 @@
 import {searchWikimedia} from '../api/wikimedia';
-import type {WikimediaSearchResponse} from '../types';
+import type {WikimediaSearchResponse, WikimediaSearchResult} from '../types';
 
 jest.mock('../api/wikimedia');
 
@@ -7,40 +7,37 @@ const mockSearch = searchWikimedia as jest.MockedFunction<typeof searchWikimedia
 
 function makeSearchResponse(query: string, count: number): WikimediaSearchResponse {
   return {
-    pages: Array.from({length: count}, (_, i) => ({
-      id: i + 1,
-      key: `File:${query}_${i}.jpg`,
+    results: Array.from({length: count}, (_, i) => ({
+      pageid: i + 1,
       title: `File:${query}_${i}.jpg`,
-      description: `${query} image ${i}`,
-      thumbnail: {
-        mimetype: 'image/jpeg',
-        width: 200,
-        height: 150,
-        url: `//example.com/${query}_${i}.jpg`,
-      },
+      thumburl: `https://example.com/${query}_${i}_320.jpg`,
+      thumbwidth: 320,
+      thumbheight: 240,
+      mime: 'image/jpeg',
+      url: `https://example.com/${query}_${i}.jpg`,
     })),
+    nextOffset: count > 0 ? count : null,
   };
 }
 
 /**
  * Simulates the component's doSearch logic with the searchIdRef guard.
- * This mirrors the pattern in WikimediaAssetSource.tsx.
+ * Mirrors the pattern in WikimediaAssetSource.tsx.
  */
 function createSearchController() {
   let searchId = 0;
-  let currentResults: WikimediaSearchResponse['pages'] = [];
+  let currentResults: WikimediaSearchResult[] = [];
   let isSearching = false;
 
-  async function doSearch(query: string, pageNum: number) {
+  async function doSearch(query: string, offset: number) {
     if (!query.trim()) return;
     const thisSearchId = ++searchId;
     isSearching = true;
 
     try {
-      const data = await searchWikimedia(query, 40, pageNum * 40);
+      const data = await searchWikimedia(query, 40, offset);
       if (searchId !== thisSearchId) return;
-      const fileResults = data.pages.filter((p) => p.title.startsWith('File:') && p.thumbnail);
-      currentResults = pageNum === 0 ? fileResults : [...currentResults, ...fileResults];
+      currentResults = offset === 0 ? data.results : [...currentResults, ...data.results];
     } catch {
       if (searchId !== thisSearchId) return;
     } finally {
@@ -80,7 +77,6 @@ describe('Race condition: rapid consecutive searches', () => {
     const search1 = controller.doSearch('cat', 0);
     const search2 = controller.doSearch('dog', 0);
 
-    // "dog" resolves first
     resolveSecond(makeSearchResponse('dog', 3));
     await search2;
 
@@ -88,7 +84,6 @@ describe('Race condition: rapid consecutive searches', () => {
     expect(controller.getResults()[0].title).toBe('File:dog_0.jpg');
     expect(controller.getIsSearching()).toBe(false);
 
-    // "cat" resolves after — stale, should be discarded
     resolveFirst(makeSearchResponse('cat', 5));
     await search1;
 
@@ -113,16 +108,12 @@ describe('Race condition: rapid consecutive searches', () => {
     const search1 = controller.doSearch('cat', 0);
     const search2 = controller.doSearch('dog', 0);
 
-    // "cat" resolves first — but it's stale because "dog" was triggered after
     resolveFirst(makeSearchResponse('cat', 5));
     await search1;
 
-    // Results should still be empty (stale search was discarded)
     expect(controller.getResults()).toHaveLength(0);
-    // isSearching should still be true (the active search hasn't resolved)
     expect(controller.getIsSearching()).toBe(true);
 
-    // "dog" resolves — this is the current search
     resolveSecond(makeSearchResponse('dog', 3));
     await search2;
 
@@ -149,7 +140,6 @@ describe('Race condition: rapid consecutive searches', () => {
 
     expect(controller.getSearchId()).toBe(3);
 
-    // Resolve in reverse order: bird, dog, cat
     resolvers[2](makeSearchResponse('bird', 2));
     await s3;
     expect(controller.getResults()).toHaveLength(2);
@@ -157,13 +147,11 @@ describe('Race condition: rapid consecutive searches', () => {
 
     resolvers[1](makeSearchResponse('dog', 4));
     await s2;
-    // Dog results discarded — bird was the latest
     expect(controller.getResults()).toHaveLength(2);
     expect(controller.getResults()[0].title).toBe('File:bird_0.jpg');
 
     resolvers[0](makeSearchResponse('cat', 6));
     await s1;
-    // Cat results also discarded
     expect(controller.getResults()).toHaveLength(2);
     expect(controller.getResults()[0].title).toBe('File:bird_0.jpg');
   });
@@ -187,7 +175,6 @@ describe('Race condition: rapid consecutive searches', () => {
 
     expect(controller.getIsSearching()).toBe(true);
 
-    // Stale search resolves — should NOT flip isSearching to false
     resolveFirst(makeSearchResponse('cat', 5));
     await search1;
 
@@ -211,14 +198,12 @@ describe('Race condition: rapid consecutive searches', () => {
     const search1 = controller.doSearch('cat', 0);
     const search2 = controller.doSearch('dog', 0);
 
-    // First search fails — but it's stale, error should be silently ignored
     rejectFirst(new Error('Network error'));
     await search1;
 
     expect(controller.getIsSearching()).toBe(true);
     expect(controller.getResults()).toHaveLength(0);
 
-    // Second search succeeds
     resolveSecond(makeSearchResponse('dog', 3));
     await search2;
 
