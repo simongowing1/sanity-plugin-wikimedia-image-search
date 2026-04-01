@@ -1,4 +1,4 @@
-import {searchWikimedia, getFileDetails} from '../api/wikimedia';
+import {getFileDetails, searchWikimedia} from '../api/wikimedia';
 import type {WikimediaActionResponse, WikimediaFileResponse} from '../types';
 
 const mockFetch = jest.fn();
@@ -104,17 +104,47 @@ describe('searchWikimedia', () => {
           '1': {
             pageid: 1,
             title: 'File:Photo.jpg',
-            imageinfo: [{url: '', thumburl: '', thumbwidth: 320, thumbheight: 240, mime: 'image/jpeg', width: 100, height: 100}],
+            imageinfo: [
+              {
+                url: '',
+                thumburl: '',
+                thumbwidth: 320,
+                thumbheight: 240,
+                mime: 'image/jpeg',
+                width: 100,
+                height: 100,
+              },
+            ],
           },
           '2': {
             pageid: 2,
             title: 'File:Doc.pdf',
-            imageinfo: [{url: '', thumburl: '', thumbwidth: 320, thumbheight: 240, mime: 'application/pdf', width: 100, height: 100}],
+            imageinfo: [
+              {
+                url: '',
+                thumburl: '',
+                thumbwidth: 320,
+                thumbheight: 240,
+                mime: 'application/pdf',
+                width: 100,
+                height: 100,
+              },
+            ],
           },
           '3': {
             pageid: 3,
             title: 'File:Audio.ogg',
-            imageinfo: [{url: '', thumburl: '', thumbwidth: 0, thumbheight: 0, mime: 'audio/ogg', width: 0, height: 0}],
+            imageinfo: [
+              {
+                url: '',
+                thumburl: '',
+                thumbwidth: 0,
+                thumbheight: 0,
+                mime: 'audio/ogg',
+                width: 0,
+                height: 0,
+              },
+            ],
           },
         },
       },

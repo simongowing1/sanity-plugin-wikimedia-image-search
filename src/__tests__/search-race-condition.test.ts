@@ -65,11 +65,8 @@ describe('Race condition: rapid consecutive searches', () => {
 
     let resolveFirst!: (value: WikimediaSearchResponse) => void;
     let resolveSecond!: (value: WikimediaSearchResponse) => void;
-
     mockSearch
-      .mockImplementationOnce(
-        () => new Promise<WikimediaSearchResponse>((r) => (resolveFirst = r)),
-      )
+      .mockImplementationOnce(() => new Promise<WikimediaSearchResponse>((r) => (resolveFirst = r)))
       .mockImplementationOnce(
         () => new Promise<WikimediaSearchResponse>((r) => (resolveSecond = r)),
       );
@@ -98,9 +95,7 @@ describe('Race condition: rapid consecutive searches', () => {
     let resolveSecond!: (value: WikimediaSearchResponse) => void;
 
     mockSearch
-      .mockImplementationOnce(
-        () => new Promise<WikimediaSearchResponse>((r) => (resolveFirst = r)),
-      )
+      .mockImplementationOnce(() => new Promise<WikimediaSearchResponse>((r) => (resolveFirst = r)))
       .mockImplementationOnce(
         () => new Promise<WikimediaSearchResponse>((r) => (resolveSecond = r)),
       );
@@ -160,15 +155,10 @@ describe('Race condition: rapid consecutive searches', () => {
     const controller = createSearchController();
 
     let resolveFirst!: (value: WikimediaSearchResponse) => void;
-    let resolveSecond!: (value: WikimediaSearchResponse) => void;
 
     mockSearch
-      .mockImplementationOnce(
-        () => new Promise<WikimediaSearchResponse>((r) => (resolveFirst = r)),
-      )
-      .mockImplementationOnce(
-        () => new Promise<WikimediaSearchResponse>((r) => (resolveSecond = r)),
-      );
+      .mockImplementationOnce(() => new Promise<WikimediaSearchResponse>((r) => (resolveFirst = r)))
+      .mockImplementationOnce(() => new Promise<WikimediaSearchResponse>(() => undefined));
 
     const search1 = controller.doSearch('cat', 0);
     controller.doSearch('dog', 0);

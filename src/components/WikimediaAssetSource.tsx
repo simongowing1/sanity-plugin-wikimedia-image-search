@@ -1,4 +1,4 @@
-import { SearchIcon } from '@sanity/icons';
+import {SearchIcon} from '@sanity/icons';
 import {
   Box,
   Button,
@@ -12,16 +12,16 @@ import {
   Text,
   TextInput,
 } from '@sanity/ui';
-import { type ChangeEvent, RefObject, useCallback, useEffect, useRef, useState } from 'react';
-import type { AssetFromSource, AssetSourceComponentProps } from 'sanity';
+import {type ChangeEvent, RefObject, useCallback, useEffect, useRef, useState} from 'react';
+import type {AssetFromSource, AssetSourceComponentProps} from 'sanity';
 
-import { getFileDetails, searchWikimedia } from '../api/wikimedia';
-import type { WikimediaSearchResult } from '../types';
+import {getFileDetails, searchWikimedia} from '../api/wikimedia';
+import type {WikimediaSearchResult} from '../types';
 
 const RESULTS_PER_PAGE = 40;
 
 export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
-  const { onSelect, onClose, selectionType } = props;
+  const {onSelect, onClose, selectionType} = props;
   const isMulti = (selectionType as string) !== 'single';
 
   const [query, setQuery] = useState('');
@@ -38,31 +38,28 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
     inputRef.current?.focus();
   }, []);
 
-  const doSearch = useCallback(
-    async (searchQuery: string, offset: number) => {
-      if (!searchQuery.trim()) return;
-      const currentSearchId = ++searchIdRef.current;
-      setIsSearching(true);
-      try {
-        const data = await searchWikimedia(searchQuery, RESULTS_PER_PAGE, offset);
-        if (searchIdRef.current !== currentSearchId) return;
-        setResults(offset === 0 ? data.results : (prev) => [...prev, ...data.results]);
-        setNextOffset(data.nextOffset);
-        setHasSearched(true);
-      } catch (err) {
-        if (searchIdRef.current !== currentSearchId) return;
-        console.error('Wikimedia search error:', err);
-      } finally {
-        if (searchIdRef.current === currentSearchId) {
-          setIsSearching(false);
-        }
+  const doSearch = useCallback(async (searchQuery: string, offset: number) => {
+    if (!searchQuery.trim()) return;
+    const currentSearchId = ++searchIdRef.current;
+    setIsSearching(true);
+    try {
+      const data = await searchWikimedia(searchQuery, RESULTS_PER_PAGE, offset);
+      if (searchIdRef.current !== currentSearchId) return;
+      setResults(offset === 0 ? data.results : (prev) => [...prev, ...data.results]);
+      setNextOffset(data.nextOffset);
+      setHasSearched(true);
+    } catch (err) {
+      if (searchIdRef.current !== currentSearchId) return;
+      console.error('Wikimedia search error:', err);
+    } finally {
+      if (searchIdRef.current === currentSearchId) {
+        setIsSearching(false);
       }
-    },
-    [],
-  );
+    }
+  }, []);
 
   const handleSubmit = useCallback(
-    (e: { preventDefault(): void }) => {
+    (e: {preventDefault(): void}) => {
       e.preventDefault();
       setResults([]);
       setSelected(new Set());
@@ -187,9 +184,7 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
                   icon={SearchIcon}
                   placeholder="Search Wikimedia Commons..."
                   value={query}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    setQuery(e.currentTarget.value)
-                  }
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.currentTarget.value)}
                 />
               </Box>
               <Button
@@ -234,7 +229,7 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
                       onClick={() => handleToggleSelect(result)}
                       onDoubleClick={() => handleDoubleClick(result)}
                     >
-                      <Box style={{ position: 'relative', paddingBottom: '100%' }}>
+                      <Box style={{position: 'relative', paddingBottom: '100%'}}>
                         <img
                           src={result.thumburl}
                           alt={result.title.replace(/^File:/, '')}
@@ -270,12 +265,12 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
                 )}
               </Flex>
 
-              {selected.size > 0 && (
+              {selected.size === 0 ? null : (
                 <Card padding={3} radius={2} tone="positive">
                   <Flex justify="space-between" align="center">
                     <Inline space={2}>
                       <Text size={1} weight="medium">
-                        {selected.size} image{selected.size !== 1 ? 's' : ''} selected
+                        {selected.size} image{selected.size === 1 ? '' : 's'} selected
                       </Text>
                     </Inline>
                     <Button
