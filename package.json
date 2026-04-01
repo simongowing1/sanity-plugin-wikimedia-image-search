@@ -91,5 +91,6 @@
   "engines": {
     "node": ">=18"
   },
+  "packageManager": "npm@10.9.2",
   "browserslist": "extends @sanity/browserslist-config"
 }
