@@ -1,6 +1,6 @@
 {
   "name": "sanity-plugin-wikimedia-image-search",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Search Wikimedia Commons for freely-licensed images and insert them into Sanity Studio.",
   "keywords": [
     "sanity",
