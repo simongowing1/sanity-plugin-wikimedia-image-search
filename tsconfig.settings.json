@@ -12,6 +12,7 @@
     "moduleDetection": "force",
     "strict": true,
     "allowSyntheticDefaultImports": true,
+    "types": ["node", "react", "react-dom", "jest"],
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
