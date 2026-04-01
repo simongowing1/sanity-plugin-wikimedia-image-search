@@ -15,18 +15,10 @@ import {
 import { type ChangeEvent, RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import type { AssetFromSource, AssetSourceComponentProps } from 'sanity';
 
-import { getFileDetails, resizeThumbnailUrl, searchWikimedia } from '../api/wikimedia';
+import { getFileDetails, searchWikimedia } from '../api/wikimedia';
 import type { WikimediaSearchResult } from '../types';
 
 const RESULTS_PER_PAGE = 40;
-const ALLOWED_MIMETYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'image/svg+xml',
-  'image/tiff',
-]);
 
 export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
   const { onSelect, onClose, selectionType } = props;
@@ -35,11 +27,10 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<WikimediaSearchResult[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [page, setPage] = useState(0);
+  const [nextOffset, setNextOffset] = useState<number | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isInserting, setIsInserting] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchIdRef: RefObject<number> = useRef(0);
 
@@ -48,22 +39,15 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
   }, []);
 
   const doSearch = useCallback(
-    async (searchQuery: string, pageNum: number) => {
+    async (searchQuery: string, offset: number) => {
       if (!searchQuery.trim()) return;
       const currentSearchId = ++searchIdRef.current;
       setIsSearching(true);
       try {
-        const offset = pageNum * RESULTS_PER_PAGE;
         const data = await searchWikimedia(searchQuery, RESULTS_PER_PAGE, offset);
         if (searchIdRef.current !== currentSearchId) return;
-        const fileResults = data.pages.filter(
-          (p) =>
-            p.title.startsWith('File:') &&
-            p.thumbnail &&
-            ALLOWED_MIMETYPES.has(p.thumbnail.mimetype),
-        );
-        setResults(pageNum === 0 ? fileResults : (prev) => [...prev, ...fileResults]);
-        setHasMore(data.pages.length === RESULTS_PER_PAGE);
+        setResults(offset === 0 ? data.results : (prev) => [...prev, ...data.results]);
+        setNextOffset(data.nextOffset);
         setHasSearched(true);
       } catch (err) {
         if (searchIdRef.current !== currentSearchId) return;
@@ -82,17 +66,17 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
       e.preventDefault();
       setResults([]);
       setSelected(new Set());
-      setPage(0);
+      setNextOffset(null);
       doSearch(query, 0);
     },
     [query, doSearch],
   );
 
   const handleLoadMore = useCallback(() => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    doSearch(query, nextPage);
-  }, [page, query, doSearch]);
+    if (nextOffset !== null) {
+      doSearch(query, nextOffset);
+    }
+  }, [nextOffset, query, doSearch]);
 
   const handleToggleSelect = useCallback(
     (result: WikimediaSearchResult) => {
@@ -132,9 +116,9 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
               source: {
                 name: 'wikimedia-commons',
                 id: result.title,
-                url: 'https:' + fileData.file_description_url,
+                url: `https:${fileData.file_description_url}`,
               },
-              description: result.description || result.title,
+              description: result.title.replace(/^File:/, ''),
               creditLine: 'Wikimedia Commons',
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -168,9 +152,9 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
               source: {
                 name: 'wikimedia-commons',
                 id: result.title,
-                url: 'https:' + fileData.file_description_url,
+                url: `https:${fileData.file_description_url}`,
               },
-              description: result.description || result.title,
+              description: result.title.replace(/^File:/, ''),
               creditLine: 'Wikimedia Commons',
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -238,7 +222,7 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
                   const isSelected = selected.has(result.title);
                   return (
                     <Card
-                      key={result.id}
+                      key={result.pageid}
                       radius={2}
                       shadow={isSelected ? 2 : 0}
                       tone={isSelected ? 'primary' : 'default'}
@@ -251,21 +235,19 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
                       onDoubleClick={() => handleDoubleClick(result)}
                     >
                       <Box style={{ position: 'relative', paddingBottom: '100%' }}>
-                        {result.thumbnail && (
-                          <img
-                            src={resizeThumbnailUrl(result.thumbnail.url, 200)}
-                            alt={result.description || result.title}
-                            loading="lazy"
-                            style={{
-                              position: 'absolute',
-                              top: 0,
-                              left: 0,
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover',
-                            }}
-                          />
-                        )}
+                        <img
+                          src={result.thumburl}
+                          alt={result.title.replace(/^File:/, '')}
+                          loading="lazy"
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                        />
                       </Box>
                       <Box padding={2}>
                         <Text size={0} muted textOverflow="ellipsis">
@@ -278,7 +260,7 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
               </Grid>
 
               <Flex justify="center" gap={3} align="center">
-                {hasMore && (
+                {nextOffset !== null && (
                   <Button
                     text={isSearching ? 'Loading...' : 'Load more'}
                     mode="ghost"

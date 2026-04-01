@@ -1,23 +1,41 @@
-export interface WikimediaSearchResponse {
-  pages: WikimediaSearchResult[];
+export interface WikimediaImageInfo {
+  url: string;
+  thumburl: string;
+  thumbwidth: number;
+  thumbheight: number;
+  mime: string;
+  width: number;
+  height: number;
+  descriptionurl?: string;
+}
+
+export interface WikimediaPage {
+  pageid: number;
+  title: string;
+  imageinfo?: WikimediaImageInfo[];
+}
+
+export interface WikimediaActionResponse {
+  continue?: {gsroffset: number; [key: string]: unknown};
+  query?: {
+    pages: Record<string, WikimediaPage>;
+  };
 }
 
 export interface WikimediaSearchResult {
-  id: number;
-  key: string;
+  pageid: number;
   title: string;
-  excerpt?: string;
-  matched_title?: string;
-  description?: string;
-  thumbnail?: WikimediaThumbnail;
+  thumburl: string;
+  thumbwidth: number;
+  thumbheight: number;
+  mime: string;
+  url: string;
+  descriptionurl?: string;
 }
 
-export interface WikimediaThumbnail {
-  mimetype: string;
-  width: number;
-  height: number;
-  duration?: number;
-  url: string;
+export interface WikimediaSearchResponse {
+  results: WikimediaSearchResult[];
+  nextOffset: number | null;
 }
 
 export interface WikimediaFileResponse {
