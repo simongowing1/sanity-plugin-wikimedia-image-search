@@ -19,6 +19,14 @@ import { getFileDetails, resizeThumbnailUrl, searchWikimedia } from '../api/wiki
 import type { WikimediaSearchResult } from '../types';
 
 const RESULTS_PER_PAGE = 40;
+const ALLOWED_MIMETYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/svg+xml',
+  'image/tiff',
+]);
 
 export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
   const { onSelect, onClose, selectionType } = props;
@@ -48,7 +56,12 @@ export default function WikimediaAssetSource(props: AssetSourceComponentProps) {
         const offset = pageNum * RESULTS_PER_PAGE;
         const data = await searchWikimedia(searchQuery, RESULTS_PER_PAGE, offset);
         if (searchIdRef.current !== currentSearchId) return;
-        const fileResults = data.pages.filter((p) => p.title.startsWith('File:') && p.thumbnail);
+        const fileResults = data.pages.filter(
+          (p) =>
+            p.title.startsWith('File:') &&
+            p.thumbnail &&
+            ALLOWED_MIMETYPES.has(p.thumbnail.mimetype),
+        );
         setResults(pageNum === 0 ? fileResults : (prev) => [...prev, ...fileResults]);
         setHasMore(data.pages.length === RESULTS_PER_PAGE);
         setHasSearched(true);
