@@ -5,6 +5,16 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.1.0](https://github.com/simongowing1/sanity-plugin-wikimedia-image-search/compare/v1.0.0...v1.1.0) (2026-04-02)
+
+### Features
+
+- trigger release ([f87f728](https://github.com/simongowing1/sanity-plugin-wikimedia-image-search/commit/f87f72851aa52ce0214ff97c337f0119221cb117))
+
+### Bug Fixes
+
+- recover from failed initial publish ([0d95355](https://github.com/simongowing1/sanity-plugin-wikimedia-image-search/commit/0d95355dbe54d08508dca25610eaf783c1e99bd4))
+
 ## 1.0.0 (2026-04-01)
 
 ### Features
